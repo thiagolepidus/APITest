@@ -1,0 +1,27 @@
+{
+	"title": "DataverseDatasetFiles",
+	"description": "A file from a Dataset.",
+	"properties": {
+		"id": {
+			"type": "integer",
+			"readOnly": true,
+			"apiSummary": true
+		},
+		"submissionId": {
+			"type": "integer",
+			"apiSummary": true
+		},
+		"userId": {
+			"type": "integer",
+			"apiSummary": true
+		},
+		"fileId": {
+			"type": "integer",
+			"apiSummary": true
+		},
+		"fileName": {
+			"type": "string",
+			"apiSummary": true
+		}
+	}
+}
