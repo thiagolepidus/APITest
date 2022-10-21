@@ -5,12 +5,27 @@ class TemplateRewriter {
     private $plugin;
 
     public function __construct($plugin) {
-        HookRegistry::register('submissionsubmitstep2form::display', array($this, 'addDatasetFileContainer'));
+        HookRegistry::register('submissionsubmitstep2form::display', array($this, 'addDatasetFilesContainer'));
+        HookRegistry::register('TemplateManager::display', array($this, 'addDatasetPageComponent'));
 
         $this->plugin = $plugin;
     }
 
-    public function addDatasetFileContainer($hookName, $params) {
+    public function addDatasetPageComponent($hookName, $params) {
+        $templateMgr = &$params[0];
+        $request = PKPApplication::get()->getRequest();
+
+        $templateMgr->addJavaScript(
+            'datasetPage',
+            $request->getBaseUrl() . DIRECTORY_SEPARATOR . $this->plugin->getPluginPath() . DIRECTORY_SEPARATOR . 'js' . DIRECTORY_SEPARATOR . 'DatasetPage.js',
+            [
+                'contexts' => ['backend'],
+                'priority' => STYLE_SEQUENCE_LAST,
+            ]
+        );
+    }
+
+    public function addDatasetFilesContainer($hookName, $params) {
 		$request = PKPApplication::get()->getRequest();
 		$templateMgr = TemplateManager::getManager($request);
 
@@ -20,26 +35,19 @@ class TemplateRewriter {
 
 		$templateMgr->assign('submissionId', $submissionId);
 
-		$templateMgr->registerFilter("output", array($this, 'datasetFileContainerFilter'));
+		$templateMgr->registerFilter("output", array($this, 'datasetFilesContainerFilter'));
 
 		return false;
     }
 
-    function datasetFileContainerFilter($output, $templateMgr) {
+    function datasetFilesContainerFilter($output, $templateMgr) {
 		if (
 			preg_match('/<div[^>]+class="section formButtons form_buttons[^>]*"[^>]*>/', $output, $matches, PREG_OFFSET_CAPTURE)
 			&& $templateMgr->template_resource == 'submission/form/step2.tpl'
 		) {
-			$datasetFileList = $this->getDatasetFileContainer('datasetFileList');
-			$datasetFileForm = $this->getDatasetFileContainer('datasetFileForm');
-
-			$offset = $matches[0][1];
-            $newOutput = $templateMgr->fetch('string:' . $datasetFileForm);
-			$newOutput .= substr($output, 0, $offset + strlen($match));
-			
-			
-			$newOutput .= $templateMgr->fetch('string:' . $datasetFileList);
-			$newOutput .= substr($output, $offset + strlen($match));
+			$datasetFilesContainer = $this->getDatasetFileContainer();
+            $newOutput = $templateMgr->fetch('string:' . $datasetFilesContainer);
+			$newOutput .= $output;
 			$output = $newOutput;
 			$templateMgr->unregisterFilter('output', array($this, 'datasetFileFormFilter'));
 		}
@@ -47,13 +55,13 @@ class TemplateRewriter {
 		return $output;
 	}
 
-    function getDatasetFileContainer($op) {
+    function getDatasetFileContainer() {
         return '
             {capture assign=datasetFileFormUrl}
                 {url 
                     router=$smarty.const.ROUTE_COMPONENT 
                     component="plugins.generic.apiTest.classes.handler.DatasetFileUploadHandler" 
-                    op="'. $op .'"
+                    op="datasetFiles"
                     submissionId=$submissionId
                     escape=false
                 }

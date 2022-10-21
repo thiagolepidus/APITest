@@ -45,6 +45,8 @@ class DatasetFileHandler extends APIHandler {
 			}
 		}
 
+        ksort($items);
+
         return $response->withJson([
 			'items' => $items,
 		], 200);
